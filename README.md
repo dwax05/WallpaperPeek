@@ -1,6 +1,6 @@
 # WallpaperPeek
 
-<img width="1356" height="987" alt="Screenshot 2026-07-04 at 3 39 35 AM" src="https://github.com/user-attachments/assets/2d5be88e-ff9f-4438-842f-4260908b4997" />
+<img width="1356" height="987" alt="Screenshot 2026-07-04 at 3 39 35 AM" src="https://github.com/user-attachments/assets/c132a18d-f507-4033-adf4-2af6c147323c" />
 
 Transparent pywal-coloured wallpaper picker for macOS built with Swift. Primarily made for Sequoia 15.7.7, but I've also tested it working on macOS 26 (Tahoe). I hit a hotkey (my case, Alt + Q) and a grid of wallpapers appear. You then either click one or navigate with arrow keys + enter to set the wallpaper. It's just a pure floating overlay with no Dock nor menu bar icon. 
 
