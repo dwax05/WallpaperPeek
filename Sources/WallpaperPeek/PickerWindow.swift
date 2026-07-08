@@ -119,9 +119,11 @@ final class PickerWindow: NSPanel {
         reloadItems()
         activeWallpaperPath = WallpaperEngine.currentWallpaper()
         selectedIndex = indexOfActive() ?? 0
+        // buildUI (via render) sizes the window to its final frame before
+        // creating the container, so the first open is laid out correctly.
+        render()
         makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        render()
     }
 
     // Rebuild `items` for `currentDir`. Folder cells (and ".." when not at the
@@ -189,6 +191,14 @@ final class PickerWindow: NSPanel {
         let chromeH: CGFloat = 58 + 40  // title + footer
         let winH = min(sf.height - 80, gridH + chromeH)
 
+        // Size the window to its final frame BEFORE building the container and
+        // subviews. Assigning `contentView` sizes the container to the current
+        // window content size; if the window is still tiny (first open) every
+        // subview gets laid out against the wrong geometry and the content ends
+        // up scaled/offset (only the bottom-left corner visible). Positioning
+        // first means the container fills the correct size from the start.
+        positionWindow(width: winW, height: winH)
+
         let container: NSVisualEffectView
         if let existing = self.container {
             container = existing
@@ -202,6 +212,7 @@ final class PickerWindow: NSPanel {
             container.wantsLayer = true
             container.layer?.cornerRadius = 16
             container.layer?.masksToBounds = true
+            container.layer?.contentsScale = backingScaleFactor
             self.container = container
             contentView = container
         }
@@ -250,7 +261,6 @@ final class PickerWindow: NSPanel {
         scrollView.documentView = gridContainer
 
         buildCells()
-        positionWindow(width: winW, height: winH)
         updateFooter()
     }
 
