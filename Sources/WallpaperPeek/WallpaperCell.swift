@@ -2,8 +2,21 @@ import AppKit
 
 final class WallpaperCell: NSView {
 
-    let wallpaper: Wallpaper
+    enum Kind {
+        case wallpaper(Wallpaper)
+        case folder(name: String, isParent: Bool)
+    }
+
+    let kind: Kind
     var onClick: (() -> Void)?
+
+    private var isFolder: Bool { if case .folder = kind { return true }; return false }
+    private var displayName: String {
+        switch kind {
+        case .wallpaper(let wp): return wp.name
+        case .folder(let name, let isParent): return isParent ? ".." : name
+        }
+    }
 
     private let imageView = NSImageView()
     private let label = NSTextField(labelWithString: "")
@@ -13,8 +26,8 @@ final class WallpaperCell: NSView {
     private let cfg: WPConfig
     private let isActive: Bool
 
-    init(wallpaper: Wallpaper, colors: WalColors, cfg: WPConfig, isActive: Bool, frame: NSRect) {
-        self.wallpaper = wallpaper
+    init(kind: Kind, colors: WalColors, cfg: WPConfig, isActive: Bool, frame: NSRect) {
+        self.kind = kind
         self.colors = colors
         self.cfg = cfg
         self.isActive = isActive
@@ -46,21 +59,33 @@ final class WallpaperCell: NSView {
             width: cfg.thumbW - imgInset * 2,
             height: cfg.thumbH
         )
-        imageView.imageScaling = .scaleAxesIndependently
         imageView.wantsLayer = true
         imageView.layer?.cornerRadius = 7
         imageView.layer?.masksToBounds = true
         addSubview(imageView)
 
-        let ph = NSImage(size: NSSize(width: cfg.thumbW - 16, height: cfg.thumbH))
-        ph.lockFocus()
-        colors.background.withAlphaComponent(0.4).setFill()
-        NSRect(x: 0, y: 0, width: cfg.thumbW - 16, height: cfg.thumbH).fill()
-        ph.unlockFocus()
-        imageView.image = ph
+        if isFolder {
+            // Folder cells render an SF Symbol glyph instead of a thumbnail.
+            var isParent = false
+            if case .folder(_, let p) = kind { isParent = p }
+            imageView.imageScaling = .scaleProportionallyUpOrDown
+            imageView.contentTintColor = isParent ? colors.color3 : colors.color4
+            let symbol = isParent ? "arrow.uturn.left" : "folder.fill"
+            let symCfg = NSImage.SymbolConfiguration(pointSize: cfg.thumbH * 0.42, weight: .regular)
+            imageView.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+                .withSymbolConfiguration(symCfg)
+        } else {
+            imageView.imageScaling = .scaleAxesIndependently
+            let ph = NSImage(size: NSSize(width: cfg.thumbW - 16, height: cfg.thumbH))
+            ph.lockFocus()
+            colors.background.withAlphaComponent(0.4).setFill()
+            NSRect(x: 0, y: 0, width: cfg.thumbW - 16, height: cfg.thumbH).fill()
+            ph.unlockFocus()
+            imageView.image = ph
+        }
 
         // (label underneath the image (bottom of the cell))
-        var name = wallpaper.name
+        var name = displayName
         if name.count > 24 { name = String(name.prefix(24)) + "…" }
         label.stringValue = name
         label.font = NSFont(name: "JetBrainsMono Nerd Font", size: cfg.labelFontSize)

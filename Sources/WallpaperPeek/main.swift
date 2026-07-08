@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         registerLoginItem()
+        ensureAccessibilityPermission()
 
         let cfg = WPConfig.load()
         WallpaperEngine.prewarm(width: Int(cfg.thumbW), height: Int(cfg.thumbH))
@@ -40,6 +41,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.picker.hidePicker()
             self.isShowing = false
         }
+    }
+
+    // The global hotkey uses a CGEvent tap, which macOS only permits with
+    // Accessibility access. Prompt on launch so the user is sent straight to
+    // the toggle instead of hitting a silently-dead hotkey.
+    private func ensureAccessibilityPermission() {
+        let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
+        AXIsProcessTrustedWithOptions(opts)
     }
 
     private func registerLoginItem() {

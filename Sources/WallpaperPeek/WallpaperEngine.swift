@@ -23,9 +23,9 @@ final class WallpaperEngine {
         return dir
     }()
 
-    static func listWallpapers() -> [Wallpaper] {
+    static func listWallpapers(in dir: URL = wallpaperDir) -> [Wallpaper] {
         guard let items = try? FileManager.default.contentsOfDirectory(
-            at: wallpaperDir,
+            at: dir,
             includingPropertiesForKeys: [.contentModificationDateKey],
             options: [.skipsHiddenFiles]
         ) else { return [] }
@@ -34,6 +34,20 @@ final class WallpaperEngine {
             .filter { supportedExt.contains($0.pathExtension.lowercased()) }
             .sorted { $0.lastPathComponent.lowercased() < $1.lastPathComponent.lowercased() }
             .map { Wallpaper(url: $0) }
+    }
+
+    // Immediate subdirectories of `dir` (non-recursive; descend one level at a
+    // time as the user navigates). Hidden dirs skipped.
+    static func listSubdirectories(in dir: URL) -> [URL] {
+        guard let items = try? FileManager.default.contentsOfDirectory(
+            at: dir,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return [] }
+
+        return items
+            .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true }
+            .sorted { $0.lastPathComponent.lowercased() < $1.lastPathComponent.lowercased() }
     }
 
     private static func cacheKey(_ url: URL) -> String {
@@ -133,34 +147,18 @@ final class WallpaperEngine {
     static func setWallpaper(_ url: URL) {
         let path = url.path
 
-        // (1. set desktop picture on every display)
+        // Only set the desktop picture on every display. Retheming (pywal +
+        // postrun) is owned by the fswatch wal-watch agent, which fires on the
+        // Index.plist write this osascript triggers. Running wal/postrun here as
+        // well produced a double retheme: two bar reloads and two notifications
+        // per wallpaper change. Single source of truth = the watcher (it also
+        // covers wallpaper changes made outside WallpaperPeek).
         let script = "tell application \"System Events\" to tell every desktop to set picture to POSIX file \"\(path)\""
         let osa = Process()
         osa.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         osa.arguments = ["-e", script]
         try? osa.run()
         osa.waitUntilExit()
-
-        // (2. run pywal: ~/miniconda3/bin/wal -i <path> --backend balanced -n)
-        let walPath = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("miniconda3/bin/wal").path
-        if FileManager.default.fileExists(atPath: walPath) {
-            let wal = Process()
-            wal.executableURL = URL(fileURLWithPath: walPath)
-            wal.arguments = ["-i", path, "--backend", "balanced", "-n"]
-            try? wal.run()
-            wal.waitUntilExit()
-        }
-
-        // 3. (fire postrun (non-blocking))
-        let postrun = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".config/wal/postrun").path
-        if FileManager.default.fileExists(atPath: postrun) {
-            let pr = Process()
-            pr.executableURL = URL(fileURLWithPath: "/bin/bash")
-            pr.arguments = [postrun]
-            try? pr.run()
-        }
     }
 }
 
