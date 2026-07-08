@@ -4,7 +4,7 @@
 
 Transparent pywal-coloured wallpaper picker for macOS built with Swift. Primarily made for Sequoia 15.7.7, but I've also tested it working on macOS 26 (Tahoe). I hit a hotkey (my case, Alt + Q) and a grid of wallpapers appear. You then either click one or navigate with arrow keys + enter to set the wallpaper. It's just a pure floating overlay with no Dock nor menu bar icon. 
 
-*NOTE: I haven't been able to fix this bug where the overlay doesn't load quite right on first hotkey press yet. If you retoggle it with the hotkey though, it should work fine.
+> **Fork feature — folder browsing:** press **`f`** in the picker to show subfolder tiles (plus a `..` entry). **Enter**/click a folder to go in, **`..`** or **Backspace** to go back up. Lets you organise `~/Downloads/wallpapers` into subdirectories and browse them without leaving the picker.
 
 **NOTE: I will not be uploading my wallpapers to this repo since I do not own the artwork. Instead, I'll update a credits list on my [dotfiles](https://github.com/cynaberii/dotfiles) page so you can check out the original artists!
 
